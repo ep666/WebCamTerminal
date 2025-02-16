@@ -1,0 +1,1 @@
+Little app for using webcam device in terminal;
