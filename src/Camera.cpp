@@ -119,16 +119,19 @@ void CameraDevice::InitDevice() {
     std::memset(&fmt, 0, sizeof(fmt));
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    //Todo: make it possible to change format;
+    //Todo: make it possible to change resolution;
     fmt.fmt.pix.width = 640;
     fmt.fmt.pix.height = 480;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; //char[3], [0] - r, [1] - g, [2] - b
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
-    if (xioctl(FileDesc, VIDIOC_S_FMT, &fmt)) {
+    if (xioctl(FileDesc, VIDIOC_S_FMT, &fmt) == -1) {
         std::runtime_error("VIDIOC_S_FMT");
     }
 
+    if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV) {
+        std::runtime_error("Unsuported pixelformat");
+    }
     // Buggy driver paranoia.
     unsigned int min;
     min = fmt.fmt.pix.width * 2;
@@ -294,6 +297,7 @@ void CameraDevice::StartCapturing() {
                 if (xioctl(FileDesc, VIDIOC_QBUF, &buf) == -1) {
                     throw std::runtime_error("VIDIOC_QBUF");
                 }
+                std::cout << "--\n";
             }
             type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             if (xioctl(FileDesc, VIDIOC_STREAMON, &type) == -1) {
@@ -339,4 +343,37 @@ void CameraDevice::StopCapturing() noexcept {
             break;
     }
     isCapturing = false;
+}
+
+
+void CameraDevice::GetFrame() {
+    fd_set fds;
+    struct timeval tv;
+
+    FD_ZERO(&fds);
+    FD_SET(FileDesc, &fds);
+    tv.tv_sec = 2;
+    tv.tv_usec = 0;
+
+    int retVal = select(FileDesc + 1, &fds, 0, 0, &tv);
+
+    if (retVal >= 0) {
+        struct v4l2_buffer buf;
+        std::memset(&buf, 0, sizeof(buf));
+
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+
+        if (xioctl(FileDesc, VIDIOC_DQBUF, &buf) == -1) {
+            throw std::runtime_error("VIDIOC_DQBUF");
+        }
+
+        fwrite(Buffers[buf.index].start, buf.bytesused, 1, stdout);
+
+        fflush(stderr);
+        fprintf(stderr, ".");
+        fflush(stdout);
+    } else {
+        throw std::runtime_error("Failed select");
+    }
 }

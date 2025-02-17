@@ -20,6 +20,7 @@ struct Buffer {
     ~CameraDevice();
 
     void StartCapturing();
+    void GetFrame();
     void StopCapturing() noexcept;
 
 private:
