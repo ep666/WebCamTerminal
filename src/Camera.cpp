@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+const std::string grayScale = "``..--''::__,,^^==;;;>><<++!!!rrccc**//zzz??sssLLTTvvv)))JJJ777(((|||FFFiii{{{CCC}}}fffIII333111tttllluuu[[[nnneeeoooZZZ555YYYxxxjjjyyyaaa]]]222EEESSSwwwqqqkkkPPP666hhh999ddd444VVVpppOOOGGGbbbUUUAAAKKKXXXHHHmmm888RRRDDD###$$$BBBggg000MMMNNNWWWQQQ%%%&&&@@@";
 
 CameraDevice::CameraDevice(const std::string &path, IOMethod io) 
     : IoMethod(io) {
@@ -120,9 +121,9 @@ void CameraDevice::InitDevice() {
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     //Todo: make it possible to change resolution;
-    fmt.fmt.pix.width = 640;
-    fmt.fmt.pix.height = 480;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; //char[3], [0] - r, [1] - g, [2] - b
+    fmt.fmt.pix.width = 320;
+    fmt.fmt.pix.height = 240;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
     if (xioctl(FileDesc, VIDIOC_S_FMT, &fmt) == -1) {
@@ -132,6 +133,9 @@ void CameraDevice::InitDevice() {
     if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV) {
         std::runtime_error("Unsuported pixelformat");
     }
+
+    Height = fmt.fmt.pix.height;
+    Width = fmt.fmt.pix.width;
     // Buggy driver paranoia.
     unsigned int min;
     min = fmt.fmt.pix.width * 2;
@@ -368,8 +372,30 @@ void CameraDevice::GetFrame() {
             throw std::runtime_error("VIDIOC_DQBUF");
         }
 
-        fwrite(Buffers[buf.index].start, buf.bytesused, 1, stdout);
+        unsigned char* bufArray = reinterpret_cast<unsigned char*>(Buffers[buf.index].start);
 
+        for (int i = 0; i < Height; ++i) {
+            for (int j = 0; j < Width; ++j) {
+                unsigned char m1 = 1;
+                unsigned char m2 = 1 << 2;
+                unsigned char m3 = 1 << 4;
+                unsigned char m4 = 1 << 6;
+                unsigned char val = 0;
+                val |= (m1 & bufArray[0 + i * Width * 2 + j * 2]) ? 1 : 0;
+                val |= (m2 & bufArray[0 + i * Width * 2 + j * 2]) ? 1 << 1 : 0;
+                val |= (m3 & bufArray[0 + i * Width * 2 + j * 2]) ? 1 << 2: 0;
+                val |= (m4 & bufArray[0 + i * Width * 2 + j * 2]) ? 1 << 3: 0;
+
+                val |= (m1 & bufArray[1 + i * Width * 2 + j * 2]) ? 1 << 4 : 0;
+                val |= (m2 & bufArray[1 + i * Width * 2 + j * 2]) ? 1 << 5 : 0;
+                val |= (m3 & bufArray[1 + i * Width * 2 + j * 2]) ? 1 << 6: 0;
+                val |= (m4 & bufArray[1 + i * Width * 2 + j * 2]) ? 1 << 7: 0;
+
+                std::cout << grayScale[val];
+            }
+            std::cout << std::endl;
+        }
+        //fwrite(Buffers[buf.index].start, buf.bytesused, 1, stdout);
         fflush(stderr);
         fprintf(stderr, ".");
         fflush(stdout);

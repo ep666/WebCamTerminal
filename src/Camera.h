@@ -40,4 +40,7 @@ private:
     Buffer* Buffers {nullptr};
     size_t NumBuffers {0};
     bool isCapturing {false};
+
+    int Height = 0;
+    int Width = 0;
 };
