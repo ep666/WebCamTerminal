@@ -1,4 +1,6 @@
+#pragma once
 #include <string>
+#include <vector>
 
 class CameraDevice {
 public:
@@ -10,8 +12,13 @@ enum class IOMethod {
 };
 
 struct Buffer {
-    void *start;
-    size_t length;
+    void* start {nullptr};
+    size_t length {0};
+};
+
+struct FormatInfo {
+    int Height {0};
+    int Width {0};
 };
 
     CameraDevice() = delete;
@@ -20,8 +27,9 @@ struct Buffer {
     ~CameraDevice();
 
     void StartCapturing();
-    void GetFrame();
+    const Buffer& GetFrame();
     void StopCapturing() noexcept;
+    const FormatInfo& GetFormat() const {return FormatInfo_;};
 
 private:
     void OpenDevice(const std::string &path);
@@ -34,13 +42,13 @@ private:
     void InitUserPtrMode(unsigned int bufSize);
 
 
-    int FileDesc {-1};
-    IOMethod IoMethod;
+    int FileDesc_ {-1};
+    IOMethod IoMethod_;
     //Todo: We need to use std::memory or/and vector for mem safety
-    Buffer* Buffers {nullptr};
-    size_t NumBuffers {0};
-    bool isCapturing {false};
+    std::vector<Buffer> Buffers_;
+    bool IsCapturing_ {false};
+    bool IsFirstFrame_ {true};
 
-    int Height = 0;
-    int Width = 0;
+    FormatInfo FormatInfo_;
+    unsigned int BufferSize_ {60};
 };
