@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 
+
 using Buffer = CameraDevice::Buffer;
 
 namespace FrameConverter {
@@ -14,6 +15,7 @@ struct YUYV {
     unsigned char b0;
     unsigned char b1;
 };
+
 
 void ConvertAndPrint(const Buffer& buffer, int height, int width) {
     if (buffer.length <= 0 || !buffer.start)
@@ -49,7 +51,5 @@ void ConvertAndPrint(const Buffer& buffer, int height, int width) {
         }
         std::cout << std::endl;
     }
-    
 }
-
 }

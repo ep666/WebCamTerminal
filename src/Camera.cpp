@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+
 CameraDevice::CameraDevice(const std::string &path, IOMethod io) 
     : IoMethod_(io) {
     OpenDevice(path);
@@ -267,6 +268,7 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
     }
 };
 
+
 void CameraDevice::StartCapturing() {
     enum v4l2_buf_type type;
 
@@ -316,6 +318,8 @@ void CameraDevice::StartCapturing() {
 
     IsCapturing_ = true;
 }
+
+
 void CameraDevice::StopCapturing() noexcept {
     switch(IoMethod_) {
         case IOMethod::IO_METHOD_READ:

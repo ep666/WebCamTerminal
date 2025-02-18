@@ -3,6 +3,7 @@
 
 #include <thread>
 
+
 void getInput(bool* x) {
     char input;
     while(1) {
@@ -13,6 +14,7 @@ void getInput(bool* x) {
         return;
     }
 }
+
 
 int main() {
     CameraDevice cd("/dev/video0", CameraDevice::IOMethod::IO_METHOD_MMAP);
