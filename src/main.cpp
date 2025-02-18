@@ -15,7 +15,7 @@ void getInput(bool* x) {
 }
 
 int main() {
-    CameraDevice cd("/dev/video0");
+    CameraDevice cd("/dev/video0", CameraDevice::IOMethod::IO_METHOD_MMAP);
     cd.StartCapturing();
     const int width = cd.GetFormat().Width;
     const int height = cd.GetFormat().Height;

@@ -48,6 +48,7 @@ private:
     std::vector<Buffer> Buffers_;
     bool IsCapturing_ {false};
     bool IsFirstFrame_ {true};
+    Buffer EmptyBuffer_;
 
     FormatInfo FormatInfo_;
     unsigned int BufferSize_ {60};

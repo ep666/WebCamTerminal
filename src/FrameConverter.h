@@ -16,6 +16,8 @@ struct YUYV {
 };
 
 void ConvertAndPrint(const Buffer& buffer, int height, int width) {
+    if (buffer.length <= 0 || !buffer.start)
+        return;
     YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start);
 
     for (int i = 20; i < height - 20; ++i) {

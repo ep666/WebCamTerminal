@@ -3,8 +3,6 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <cmath>
-#include <cassert>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -102,7 +100,7 @@ void CameraDevice::InitDevice() {
         crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         crop.c = cropcap.defrect;
 
-        if (xioctl(FileDesc_, VIDIOC_S_CROP, &crop)) {
+        if (xioctl(FileDesc_, VIDIOC_S_CROP, &crop) == -1) {
             switch (errno) {
             case EINVAL:
                 std::cout << "Cropping not supported\n";
@@ -247,7 +245,7 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
     
     req.count = BufferSize_;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
+    req.memory = V4L2_MEMORY_USERPTR;
 
     if (xioctl(FileDesc_, VIDIOC_REQBUFS, &req) == -1) {
         if (errno == EINVAL) {
@@ -259,7 +257,7 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
 
     Buffers_ = std::vector<Buffer>(req.count, Buffer());
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < req.count; ++i) {
         Buffers_[i].length = bufSize;
         Buffers_[i].start = malloc(bufSize);
 
@@ -305,7 +303,7 @@ void CameraDevice::StartCapturing() {
                 buf.m.userptr = (unsigned long)Buffers_[i].start;
                 buf.length = Buffers_[i].length;
 
-                if (xioctl(FileDesc_, VIDIOC_QBUF, &buf)) {
+                if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
                     throw std::runtime_error("VIDIOC_QBUF");
                 }
             }
@@ -356,18 +354,59 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
     }
 
     struct v4l2_buffer buf;
-    std::memset(&buf, 0, sizeof(buf));
+    int index = 0;
 
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
+    switch (IoMethod_) {
+        case IOMethod::IO_METHOD_READ:
+            if (read(FileDesc_, Buffers_[0].start, Buffers_[0].length) == -1) {
+                if (errno == EAGAIN) {
+                    return EmptyBuffer_;
+                }
+                throw std::runtime_error("Read failed while getting frame");
+            }
+            index = 0;
+            break;
+        case IOMethod::IO_METHOD_MMAP:
+            std::memset(&buf, 0, sizeof(buf));
 
-    if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
-        throw std::runtime_error("VIDIOC_DQBUF");
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+
+            if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
+                if (errno == EAGAIN)
+                    return EmptyBuffer_;
+                throw std::runtime_error("VIDIOC_DQBUF");
+            }
+            index = buf.index;
+            if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
+                throw std::runtime_error("VIDIOC_QBUF");
+            }
+            break;
+        case IOMethod::IO_METHOD_USERPTR:
+            std::memset(&buf, 0, sizeof(buf));
+
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_USERPTR;
+
+            if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
+                if (errno == EAGAIN)
+                    return EmptyBuffer_;
+                throw std::runtime_error("VIDIOC_DQBUF");
+            }
+
+            for (int i = 0; i < Buffers_.size(); ++i) {
+                if (buf.m.userptr == (unsigned long)Buffers_[i].start 
+                        && buf.length == Buffers_[i].length) {
+                        index = i;
+                        break;
+                }
+            }
+
+            if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
+                throw std::runtime_error("VIDIOC_QBUF");
+            }
+            break;
     }
 
-    if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
-        throw std::runtime_error("VIDIOC_QBUF");
-    }
-
-    return Buffers_[buf.index];
+    return Buffers_[index];
 }
