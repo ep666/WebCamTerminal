@@ -7,11 +7,12 @@
 void getInput(bool* x) {
     char input;
     while(1) {
-    std::cin >> input;
+        std::cin >> input;
 
-    if (input == 'q')
-        *x = false;
-        return;
+        if (input == 'q') {
+            *x = false;
+            return;
+        }
     }
 }
 
