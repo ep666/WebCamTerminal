@@ -32,5 +32,6 @@ int main() {
         std::cout << "\n\n\n=============FrameNo: " << frameCounter << "\n\n\n";
     }
 
+    system("clear");
     return 0;
 }

@@ -36,7 +36,7 @@ private:
     void CloseDevice() noexcept;
     void InitDevice();
     void DeinitDevice() noexcept;
-    [[nodiscard]] int xioctl (int fh, int request, void* arg);
+    [[nodiscard]] int xioctl (int fd, int request, void* arg);
     void InitReadMode(unsigned int bufSize);
     void InitMmapMode();
     void InitUserPtrMode(unsigned int bufSize);

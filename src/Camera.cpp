@@ -55,10 +55,10 @@ void CameraDevice::CloseDevice() noexcept {
 }
 
 
-int CameraDevice::xioctl(int fh, int request, void* arg) {
+int CameraDevice::xioctl(int fd, int request, void* arg) {
     int r;
     do {
-        r = ioctl(fh, request, arg);
+        r = ioctl(fd, request, arg);
     } while (r == -1 && EINTR == errno);
     return r;
 }
