@@ -29,7 +29,7 @@ int main() {
         system("clear");
         FrameConverter::ConvertAndPrint(frame, height, width);
         ++frameCounter;
-        std::cout << "\n\n\n=============FrameNo: " << frameCounter << "\n\n\n";
+        std::cout << "\n\n\n=============FrameNo: " << frameCounter << "=============\n\n\n";
     }
 
     system("clear");
