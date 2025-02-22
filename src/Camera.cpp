@@ -14,8 +14,11 @@
 #include <sys/mman.h>
 
 
-CameraDevice::CameraDevice(const std::string &path, IOMethod io) 
-    : IoMethod_(io) {
+CameraDevice::CameraDevice(const std::string &path, FormatInfo formatInfo,
+    unsigned int bufferSize, IOMethod io) :
+    IoMethod_(io),
+    BufferSize_(bufferSize),
+    FormatInfo_(formatInfo) {
     OpenDevice(path);
     InitDevice();
 }
@@ -33,17 +36,17 @@ void CameraDevice::OpenDevice(const std::string &path) {
     struct stat st;
 
     if (stat(path.c_str(), &st) == -1) {
-        throw std::runtime_error("Cannot identify " + path);
+        throw std::runtime_error("[OpenDevice] Cannot identify " + path);
     }
 
     if (!S_ISCHR(st.st_mode)) {
-        throw std::runtime_error(path + " is no devicen");
+        throw std::runtime_error("[OpenDevice] " + path + " is no devicen");
     }
 
     FileDesc_ = open(path.c_str(), O_RDWR /* required */ | O_NONBLOCK, 0);
 
     if (FileDesc_ == -1) {
-        throw std::runtime_error("Can't open " + path);
+        throw std::runtime_error("[OpenDevice] Can't open " + path);
     }
 }
 
@@ -68,25 +71,25 @@ void CameraDevice::InitDevice() {
 
     if (xioctl(FileDesc_, VIDIOC_QUERYCAP, &cap) == -1) {
         if (EINVAL == errno)
-            throw std::runtime_error("There is no V4L2 device");
+            throw std::runtime_error("[InitDevice] There is no V4L2 device");
         else
-            throw std::runtime_error("VIDIOC_QUERYCAP");
+            throw std::runtime_error("[InitDevice] VIDIOC_QUERYCAP");
     }
 
     if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-        throw std::runtime_error("There is no video capture device");
+        throw std::runtime_error("[InitDevice] There is no video capture device");
     }
 
     switch (IoMethod_) {
         case IOMethod::IO_METHOD_READ:
             if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-                throw std::runtime_error("Device doesn't support read i/o");
+                throw std::runtime_error("[InitDevice] Device doesn't support read i/o");
             }
             break;
         case IOMethod::IO_METHOD_MMAP:
         case IOMethod::IO_METHOD_USERPTR:
             if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-                throw std::runtime_error("Device doesn't support streaming i/o");
+                throw std::runtime_error("[InitDevice] Device doesn't support streaming i/o");
             }
             break;
     }
@@ -120,17 +123,17 @@ void CameraDevice::InitDevice() {
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     //Todo: make it possible to change resolution;
-    fmt.fmt.pix.width = 80;
-    fmt.fmt.pix.height = 60;
+    fmt.fmt.pix.width = FormatInfo_.Width;
+    fmt.fmt.pix.height = FormatInfo_.Height;
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
     if (xioctl(FileDesc_, VIDIOC_S_FMT, &fmt) == -1) {
-        std::runtime_error("VIDIOC_S_FMT");
+        std::runtime_error("[InitDevice] VIDIOC_S_FMT");
     }
 
     if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV) {
-        std::runtime_error("Unsuported pixelformat");
+        std::runtime_error("[InitDevice] Unsuported pixelformat");
     }
 
     FormatInfo_.Height = fmt.fmt.pix.height;
@@ -204,14 +207,14 @@ void CameraDevice::InitMmapMode() {
 
     if (xioctl(FileDesc_, VIDIOC_REQBUFS, &req) == -1) {
         if (errno == EINVAL) {
-            throw std::runtime_error("Device doesn't support memory mapping");
+            throw std::runtime_error("[InitMmapMode] Device doesn't support memory mapping");
         } else {
-            throw std::runtime_error("VIDIOC_REQBUFS");
+            throw std::runtime_error("[InitMmapMode] VIDIOC_REQBUFS");
         }
     }
 
     if (req.count < BufferSize_ / 2) {
-        throw std::runtime_error("Insufficient buffer memory");
+        throw std::runtime_error("[InitMmapMode] Insufficient buffer memory");
     }
 
     Buffers_ = std::vector<Buffer>(req.count, Buffer());
@@ -225,7 +228,7 @@ void CameraDevice::InitMmapMode() {
         buf.index = i;
 
         if (xioctl(FileDesc_, VIDIOC_QUERYBUF, &buf) == -1) {
-            throw std::runtime_error("VIDIOC_QUERYBUF");
+            throw std::runtime_error("[InitMmapMode] VIDIOC_QUERYBUF");
         }
 
         Buffers_[i].length = buf.length;
@@ -233,7 +236,7 @@ void CameraDevice::InitMmapMode() {
             PROT_READ | PROT_WRITE, MAP_SHARED, FileDesc_, buf.m.offset);
 
         if (Buffers_[i].start == MAP_FAILED) {
-            throw std::runtime_error("mmap failed");
+            throw std::runtime_error("[InitMmapMode] mmap failed");
         }
     }
 };
@@ -250,9 +253,9 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
 
     if (xioctl(FileDesc_, VIDIOC_REQBUFS, &req) == -1) {
         if (errno == EINVAL) {
-            throw std::runtime_error("Device doesn't support user pointer i/o");
+            throw std::runtime_error("[InitUserPtrMode] Device doesn't support user pointer i/o");
         } else {
-            throw std::runtime_error("VIDIOC_REQBUFS");
+            throw std::runtime_error("[InitUserPtrMode] VIDIOC_REQBUFS");
         }
     }
 
@@ -285,12 +288,12 @@ void CameraDevice::StartCapturing() {
                 buf.index = i;
 
                 if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
-                    throw std::runtime_error("VIDIOC_QBUF");
+                    throw std::runtime_error("[StartCapturing] VIDIOC_QBUF");
                 }
             }
             type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             if (xioctl(FileDesc_, VIDIOC_STREAMON, &type) == -1) {
-                throw std::runtime_error("VIDIOC_STREAMON");
+                throw std::runtime_error("[StartCapturing] VIDIOC_STREAMON");
             }
             break;
 
@@ -306,12 +309,12 @@ void CameraDevice::StartCapturing() {
                 buf.length = Buffers_[i].length;
 
                 if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
-                    throw std::runtime_error("VIDIOC_QBUF");
+                    throw std::runtime_error("[StartCapturing] VIDIOC_QBUF");
                 }
             }
             type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             if (xioctl(FileDesc_, VIDIOC_STREAMON, &type) == -1) {
-                throw std::runtime_error("VIDIOC_STREAMON");
+                throw std::runtime_error("[StartCapturing] VIDIOC_STREAMON");
             }
             break;
     }
@@ -349,12 +352,12 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
     int retVal = select(FileDesc_ + 1, &fds, 0, 0, &tv);
 
     if (retVal == 0) {
-        throw std::runtime_error("Device timeout");
+        throw std::runtime_error("[GetFrame] Device timeout");
     }
     if (retVal == -1) {
         if (EINTR == errno)
             return CameraDevice::GetFrame();
-        throw std::runtime_error("Failed select");
+        throw std::runtime_error("[GetFrame] Failed select");
     }
 
     struct v4l2_buffer buf;
@@ -366,7 +369,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
                 if (errno == EAGAIN) {
                     return EmptyBuffer_;
                 }
-                throw std::runtime_error("Read failed while getting frame");
+                throw std::runtime_error("[GetFrame] Read failed while getting frame");
             }
             index = 0;
             break;
@@ -379,11 +382,11 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
             if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
                 if (errno == EAGAIN)
                     return EmptyBuffer_;
-                throw std::runtime_error("VIDIOC_DQBUF");
+                throw std::runtime_error("[GetFrame] VIDIOC_DQBUF");
             }
             index = buf.index;
             if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
-                throw std::runtime_error("VIDIOC_QBUF");
+                throw std::runtime_error("[GetFrame] VIDIOC_QBUF");
             }
             break;
         case IOMethod::IO_METHOD_USERPTR:
@@ -395,7 +398,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
             if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
                 if (errno == EAGAIN)
                     return EmptyBuffer_;
-                throw std::runtime_error("VIDIOC_DQBUF");
+                throw std::runtime_error("[GetFrame] VIDIOC_DQBUF");
             }
 
             for (int i = 0; i < Buffers_.size(); ++i) {
@@ -407,7 +410,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
             }
 
             if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
-                throw std::runtime_error("VIDIOC_QBUF");
+                throw std::runtime_error("[GetFrame] VIDIOC_QBUF");
             }
             break;
     }

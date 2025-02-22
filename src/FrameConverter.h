@@ -8,8 +8,9 @@ using Buffer = CameraDevice::Buffer;
 
 namespace FrameConverter {
 
-//const std::string grayScale = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
-const std::string grayScale = " .:-=+*#%@";
+const std::string grayScale93 = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+const std::string grayScale71 = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+const std::string grayScale11 = " .:-=+*#%@";
 
 struct YUYV {
     unsigned char b0;
@@ -17,7 +18,7 @@ struct YUYV {
 };
 
 
-void ConvertAndPrint(const Buffer& buffer, int height, int width) {
+void ConvertAndPrint(const Buffer& buffer, int height, int width, const std::string& grayScale = grayScale71) {
     if (buffer.length <= 0 || !buffer.start)
         return;
     YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start);
@@ -45,7 +46,7 @@ void ConvertAndPrint(const Buffer& buffer, int height, int width) {
                 std::cout << "Index: " << index << std::endl;
                 std::cout << convertedVal << ": convertedVal" << std::endl;
                 std::cout << val << ": val" << std::endl;
-                throw std::runtime_error("Shit");
+                throw std::runtime_error("[FrameConverter] Out of bound index");
             }
             std::cout << grayScale[index];
         }

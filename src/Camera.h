@@ -22,8 +22,8 @@ struct FormatInfo {
 };
 
     CameraDevice() = delete;
-    CameraDevice(const std::string &path, 
-        IOMethod io = IOMethod::IO_METHOD_MMAP);
+    CameraDevice(const std::string &path, FormatInfo formatInfo,
+        unsigned int bufferSize, IOMethod io = IOMethod::IO_METHOD_MMAP);
     ~CameraDevice();
 
     void StartCapturing();
