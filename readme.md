@@ -5,7 +5,5 @@ Use make --debug for debug build.
 Use make clean to remove binary file.
 
 Todo:
-    FrameResizer
-    Navigation
-    Valid input for exit session
+    Menu navigation or cmdline options.
     Test for read IOMethod - don' have this device type :(
