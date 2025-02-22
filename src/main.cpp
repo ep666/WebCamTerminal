@@ -3,7 +3,6 @@
 
 #include <thread>
 
-#include <getopt.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -55,7 +54,7 @@ void mainLoop(CameraDevice& cd, const int height, const int width,
 }
 
 
-int main(int argc, char** argv) {
+int main() {
     std::string devicePath = "/dev/video0";
     CameraDevice::IOMethod method = CameraDevice::IOMethod::IO_METHOD_MMAP;
     CameraDevice::FormatInfo formatInfo;
