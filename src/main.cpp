@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
     std::string devicePath = "/dev/video0";
     CameraDevice::IOMethod method = CameraDevice::IOMethod::IO_METHOD_MMAP;
     CameraDevice::FormatInfo formatInfo;
-    formatInfo.Width = 320;
-    formatInfo.Height = 240;
+    formatInfo.Width = 160;
+    formatInfo.Height = 120;
     const std::string& grayScale = FrameConverter::grayScale71;
     unsigned int bufSize = 4;
 
