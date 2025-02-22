@@ -6,7 +6,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-void getInput(bool* x) {
+void GetInput(bool* x) {
     char input;
     struct termios oldSet, newSet;
     tcgetattr(fileno(stdin), &oldSet);
@@ -43,7 +43,7 @@ void getInput(bool* x) {
 }
 
 
-void mainLoop(CameraDevice& cd, const int height, const int width,
+void MainLoop(CameraDevice& cd, const int height, const int width,
                      bool& isRuning, const std::string& grayScale) {
     while(isRuning) {
         const auto& frame = cd.GetFrame();
@@ -67,10 +67,10 @@ int main() {
     cd.StartCapturing();
 
     bool runing = true;
-    std::thread t(getInput, &runing);
+    std::thread t(GetInput, &runing);
     t.detach();
 
-    mainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, grayScale);
+    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, grayScale);
 
     system("clear");
     return 0;
