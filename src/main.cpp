@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include "FrameConverter.h"
+#include "Params.h"
 
 #include <thread>
 
@@ -55,22 +56,20 @@ void MainLoop(CameraDevice& cd, const int height, const int width,
 
 
 int main() {
-    std::string devicePath = "/dev/video0";
-    CameraDevice::IOMethod method = CameraDevice::IOMethod::IO_METHOD_MMAP;
-    CameraDevice::FormatInfo formatInfo;
-    formatInfo.Width = 160;
-    formatInfo.Height = 120;
-    const std::string& grayScale = FrameConverter::grayScale71;
-    unsigned int bufSize = 4;
+    CameraParams params;
 
-    CameraDevice cd(devicePath, formatInfo, bufSize, method);
+    Configure(params);
+
+    CameraDevice cd(params.DevicePath, params.FormatInfo,
+                    params.BufferSize, params.IoMethod);
+
     cd.StartCapturing();
 
     bool runing = true;
     std::thread t(GetInput, &runing);
     t.detach();
 
-    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, grayScale);
+    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, params.GrayScaleDepth);
 
     system("clear");
     return 0;
