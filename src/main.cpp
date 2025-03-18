@@ -2,12 +2,14 @@
 #include "FrameConverter.h"
 #include "Params.h"
 
+#include <atomic>
+#include <functional>
 #include <thread>
 
 #include <termios.h>
 #include <unistd.h>
 
-void GetInput(bool* x) {
+void GetInput(std::atomic_bool& x) {
     char input;
     struct termios oldSet, newSet;
     tcgetattr(fileno(stdin), &oldSet);
@@ -40,12 +42,12 @@ void GetInput(bool* x) {
     }
 
     tcsetattr(fileno(stdin), TCSANOW, &oldSet);
-    *x = false;
+    x = false;
 }
 
 
 void MainLoop(CameraDevice& cd, const int height, const int width,
-                     bool& isRuning, const std::string& grayScale) {
+                     const std::atomic_bool& isRuning, const std::string& grayScale) {
     while(isRuning) {
         const auto& frame = cd.GetFrame();
         system("clear");
@@ -65,8 +67,8 @@ int main() {
 
     cd.StartCapturing();
 
-    bool runing = true;
-    std::thread t(GetInput, &runing);
+    std::atomic_bool runing = true;
+    std::thread t(GetInput, std::ref(runing));
     t.detach();
 
     MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, params.GrayScaleDepth);
