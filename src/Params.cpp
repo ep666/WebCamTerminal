@@ -1,5 +1,7 @@
 #include "Params.h"
+
 #include <filesystem>
+#include <limits>
 
 class ParamsConfigurator {
 public:
@@ -66,6 +68,10 @@ private:
             if (entry.path().string().find("video") != std::string::npos)
                 paths.push_back(entry.path());
         }
+        if (paths.empty()) {
+            std::cout << "There is no device connected" << std::endl;
+            return;
+        }
         char input;
         while(true) {
             std::cout << "Type number of desired device.\n"
@@ -128,6 +134,8 @@ private:
             }
 
             std::cout << "Wrong input" << std::endl;
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }
 
@@ -167,7 +175,8 @@ private:
                 Params_.BufferSize = input;
                 return;
             }
-
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << "Wrong input" << std::endl;
         }
     }
