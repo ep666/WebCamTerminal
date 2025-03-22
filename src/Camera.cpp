@@ -27,7 +27,6 @@ CameraDevice::CameraDevice(const std::string &path, FormatInfo formatInfo,
 CameraDevice::~CameraDevice() {
     if (IsCapturing_)
         StopCapturing();
-    DeinitDevice();
     CloseDevice();
 }
 
@@ -160,38 +159,10 @@ void CameraDevice::InitDevice() {
 }
 
 
-void CameraDevice::DeinitDevice() noexcept {
-    switch (IoMethod_) {
-        case IOMethod::IO_METHOD_READ:
-            free(Buffers_[0].start);
-            break;
-        case IOMethod::IO_METHOD_MMAP:
-            for (size_t i = 0; i < Buffers_.size(); ++i) {
-                //Must be called in destructor w/o exception;
-                //for now terminating the program;
-                if (munmap(Buffers_[i].start, Buffers_[i].length) == -1) {
-                    std::terminate();
-                }
-            }
-            break;
-        case IOMethod::IO_METHOD_USERPTR:
-            for (size_t i = 0; i < Buffers_.size(); ++i) {
-                free(Buffers_[i].start);;
-            }
-            break;
-    }
-}
-
-
 void CameraDevice::InitReadMode(unsigned int bufSize) {
     Buffers_.push_back(Buffer());
-
     Buffers_[0].length = bufSize;
-    Buffers_[0].start = malloc(bufSize);
-
-    if (!Buffers_[0].start) {
-        throw std::bad_alloc();
-    }
+    Buffers_[0].start = std::shared_ptr<void>(malloc(bufSize), free);
 };
 
 
@@ -230,13 +201,17 @@ void CameraDevice::InitMmapMode() {
             throw std::runtime_error("[InitMmapMode] VIDIOC_QUERYBUF");
         }
 
-        Buffers_[i].length = buf.length;
-        Buffers_[i].start = mmap(0, buf.length, 
-            PROT_READ | PROT_WRITE, MAP_SHARED, FileDesc_, buf.m.offset);
-
-        if (Buffers_[i].start == MAP_FAILED) {
-            throw std::runtime_error("[InitMmapMode] mmap failed");
-        }
+        auto len = buf.length;
+        Buffers_[i].length = len;
+        Buffers_[i].start = std::shared_ptr<void>(
+            mmap(0, buf.length, PROT_READ | PROT_WRITE,
+                 MAP_SHARED, FileDesc_, buf.m.offset
+                ), [len] (void* mem) {
+                        if (munmap(mem, len) == -1) { 
+                            std::terminate();
+                    }
+                }
+        );
     }
 };
 
@@ -262,11 +237,7 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
 
     for (int i = 0; i < req.count; ++i) {
         Buffers_[i].length = bufSize;
-        Buffers_[i].start = malloc(bufSize);
-
-        if (!Buffers_[i].start) {
-            throw std::bad_alloc();
-        }
+        Buffers_[i].start = std::shared_ptr<void>(malloc(bufSize), free);
     }
 };
 
@@ -304,7 +275,7 @@ void CameraDevice::StartCapturing() {
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_USERPTR;
                 buf.index = i;
-                buf.m.userptr = (unsigned long)Buffers_[i].start;
+                buf.m.userptr = (unsigned long)Buffers_[i].start.get();
                 buf.length = Buffers_[i].length;
 
                 if (xioctl(FileDesc_, VIDIOC_QBUF, &buf) == -1) {
@@ -363,7 +334,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
 
     switch (IoMethod_) {
         case IOMethod::IO_METHOD_READ:
-            if (read(FileDesc_, Buffers_[0].start, Buffers_[0].length) == -1) {
+            if (read(FileDesc_, Buffers_[0].start.get(), Buffers_[0].length) == -1) {
                 if (errno == EAGAIN) {
                     return EmptyBuffer_;
                 }
@@ -400,7 +371,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
             }
 
             for (int i = 0; i < Buffers_.size(); ++i) {
-                if (buf.m.userptr == (unsigned long)Buffers_[i].start 
+                if (buf.m.userptr == (unsigned long)Buffers_[i].start.get()
                         && buf.length == Buffers_[i].length) {
                         index = i;
                         break;
