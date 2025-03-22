@@ -122,7 +122,6 @@ void CameraDevice::InitDevice() {
     std::memset(&fmt, 0, sizeof(fmt));
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    //Todo: make it possible to change resolution;
     fmt.fmt.pix.width = FormatInfo_.Width;
     fmt.fmt.pix.height = FormatInfo_.Height;
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
@@ -168,7 +167,7 @@ void CameraDevice::DeinitDevice() noexcept {
             break;
         case IOMethod::IO_METHOD_MMAP:
             for (size_t i = 0; i < Buffers_.size(); ++i) {
-                //peace of shit code. Must be called in destructor w/o exception;
+                //Must be called in destructor w/o exception;
                 //for now terminating the program;
                 if (munmap(Buffers_[i].start, Buffers_[i].length) == -1) {
                     std::terminate();
@@ -332,7 +331,6 @@ void CameraDevice::StopCapturing() noexcept {
             auto type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             if (xioctl(FileDesc_, VIDIOC_STREAMOFF, &type) == -1) {
                 std::cerr << "VIDIOC_STREAMOFF\n";
-                //std::terminate();
             }
             break;
     }
