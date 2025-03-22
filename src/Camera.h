@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,7 @@ enum class IOMethod {
 };
 
 struct Buffer {
-    void* start {nullptr};
+    std::shared_ptr<void> start {nullptr};
     size_t length {0};
 };
 
@@ -35,7 +36,6 @@ private:
     void OpenDevice(const std::string &path);
     void CloseDevice() noexcept;
     void InitDevice();
-    void DeinitDevice() noexcept;
     [[nodiscard]] int xioctl (int fd, int request, void* arg);
     void InitReadMode(unsigned int bufSize);
     void InitMmapMode();

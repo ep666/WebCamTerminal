@@ -22,7 +22,7 @@ static void ConvertAndPrint(const Buffer& buffer, int height, int width,
                              const std::string& grayScale) {
     if (buffer.length <= 0 || !buffer.start)
         return;
-    YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start);
+    YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start.get());
 
     for (int i = 20; i < height - 20; ++i) {
         for (int j = 0; j < width; ++j) {
