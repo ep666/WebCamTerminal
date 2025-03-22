@@ -159,32 +159,6 @@ void CameraDevice::InitDevice() {
 }
 
 
-<<<<<<< HEAD
-void CameraDevice::DeinitDevice() noexcept {
-    switch (IoMethod_) {
-        case IOMethod::IO_METHOD_READ:
-            free(Buffers_[0].start);
-            break;
-        case IOMethod::IO_METHOD_MMAP:
-            for (size_t i = 0; i < Buffers_.size(); ++i) {
-                //Must be called in destructor w/o exception;
-                //for now terminating the program;
-                if (munmap(Buffers_[i].start, Buffers_[i].length) == -1) {
-                    std::terminate();
-                }
-            }
-            break;
-        case IOMethod::IO_METHOD_USERPTR:
-            for (size_t i = 0; i < Buffers_.size(); ++i) {
-                free(Buffers_[i].start);;
-            }
-            break;
-    }
-}
-
-
-=======
->>>>>>> 5efe078 (To smart pointers)
 void CameraDevice::InitReadMode(unsigned int bufSize) {
     Buffers_.push_back(Buffer());
     Buffers_[0].length = bufSize;
