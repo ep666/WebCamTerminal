@@ -1,12 +1,15 @@
 #include "Camera.h"
 #include "FrameConverter.h"
+#include "Params.h"
 
+#include <atomic>
+#include <functional>
 #include <thread>
 
 #include <termios.h>
 #include <unistd.h>
 
-void GetInput(bool* x) {
+void GetInput(std::atomic_bool& x) {
     char input;
     struct termios oldSet, newSet;
     tcgetattr(fileno(stdin), &oldSet);
@@ -39,12 +42,12 @@ void GetInput(bool* x) {
     }
 
     tcsetattr(fileno(stdin), TCSANOW, &oldSet);
-    *x = false;
+    x = false;
 }
 
 
 void MainLoop(CameraDevice& cd, const int height, const int width,
-                     bool& isRuning, const std::string& grayScale) {
+                     const std::atomic_bool& isRuning, const std::string& grayScale) {
     while(isRuning) {
         const auto& frame = cd.GetFrame();
         system("clear");
@@ -55,22 +58,20 @@ void MainLoop(CameraDevice& cd, const int height, const int width,
 
 
 int main() {
-    std::string devicePath = "/dev/video0";
-    CameraDevice::IOMethod method = CameraDevice::IOMethod::IO_METHOD_MMAP;
-    CameraDevice::FormatInfo formatInfo;
-    formatInfo.Width = 160;
-    formatInfo.Height = 120;
-    const std::string& grayScale = FrameConverter::grayScale71;
-    unsigned int bufSize = 4;
+    CameraParams params;
 
-    CameraDevice cd(devicePath, formatInfo, bufSize, method);
+    Configure(params);
+
+    CameraDevice cd(params.DevicePath, params.FormatInfo,
+                    params.BufferSize, params.IoMethod);
+
     cd.StartCapturing();
 
-    bool runing = true;
-    std::thread t(GetInput, &runing);
+    std::atomic_bool runing = true;
+    std::thread t(GetInput, std::ref(runing));
     t.detach();
 
-    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, grayScale);
+    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, params.GrayScaleDepth);
 
     system("clear");
     return 0;

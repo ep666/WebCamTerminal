@@ -8,9 +8,9 @@ using Buffer = CameraDevice::Buffer;
 
 namespace FrameConverter {
 
-const std::string grayScale93 = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
-const std::string grayScale71 = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
-const std::string grayScale11 = " .:-=+*#%@";
+const std::string grayScale92 = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+const std::string grayScale70 = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+const std::string grayScale10 = " .:-=+*#%@";
 
 struct YUYV {
     unsigned char b0;
@@ -18,7 +18,8 @@ struct YUYV {
 };
 
 
-void ConvertAndPrint(const Buffer& buffer, int height, int width, const std::string& grayScale = grayScale71) {
+static void ConvertAndPrint(const Buffer& buffer, int height, int width,
+                             const std::string& grayScale) {
     if (buffer.length <= 0 || !buffer.start)
         return;
     YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start);
