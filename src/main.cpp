@@ -67,7 +67,7 @@ int main() {
 
     cd.StartCapturing();
 
-    std::atomic_bool runing = true;
+    std::atomic_bool runing(true);
     std::thread t(GetInput, std::ref(runing));
     t.detach();
 
