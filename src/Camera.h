@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,7 +29,7 @@ struct FormatInfo {
     ~CameraDevice();
 
     void StartCapturing();
-    const Buffer& GetFrame();
+    const std::optional<Buffer> GetFrame();
     void StopCapturing() noexcept;
     const FormatInfo& GetFormat() const {return FormatInfo_;};
 
@@ -44,11 +45,9 @@ private:
 
     int FileDesc_ {-1};
     IOMethod IoMethod_;
-    //Todo: We need to use std::memory or/and vector for mem safety
     std::vector<Buffer> Buffers_;
     bool IsCapturing_ {false};
     bool IsFirstFrame_ {true};
-    Buffer EmptyBuffer_;
 
     FormatInfo FormatInfo_;
     unsigned int BufferSize_ {60};

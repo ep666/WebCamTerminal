@@ -309,7 +309,7 @@ void CameraDevice::StopCapturing() noexcept {
 }
 
 
-const CameraDevice::Buffer& CameraDevice::GetFrame() {
+const std::optional<CameraDevice::Buffer> CameraDevice::GetFrame() {
     fd_set fds;
     struct timeval tv;
 
@@ -336,7 +336,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
         case IOMethod::IO_METHOD_READ:
             if (read(FileDesc_, Buffers_[0].start.get(), Buffers_[0].length) == -1) {
                 if (errno == EAGAIN) {
-                    return EmptyBuffer_;
+                    return std::nullopt;
                 }
                 throw std::runtime_error("[GetFrame] Read failed while getting frame");
             }
@@ -350,7 +350,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
 
             if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
                 if (errno == EAGAIN)
-                    return EmptyBuffer_;
+                    return std::nullopt;
                 throw std::runtime_error("[GetFrame] VIDIOC_DQBUF");
             }
             index = buf.index;
@@ -366,7 +366,7 @@ const CameraDevice::Buffer& CameraDevice::GetFrame() {
 
             if (xioctl(FileDesc_, VIDIOC_DQBUF, &buf) == -1) {
                 if (errno == EAGAIN)
-                    return EmptyBuffer_;
+                    return std::nullopt;
                 throw std::runtime_error("[GetFrame] VIDIOC_DQBUF");
             }
 

@@ -51,7 +51,8 @@ void MainLoop(CameraDevice& cd, const int height, const int width,
     while(isRuning) {
         const auto& frame = cd.GetFrame();
         system("clear");
-        FrameConverter::ConvertAndPrint(frame, height, width, grayScale);
+        if (frame.has_value())
+            FrameConverter::ConvertAndPrint(frame.value(), height, width, grayScale);
         std::cout << "\n=====Press q to exit=====\n";
     }
 }

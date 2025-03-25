@@ -23,8 +23,9 @@ static void ConvertAndPrint(const Buffer& buffer, int height, int width,
     if (buffer.length <= 0 || !buffer.start)
         return;
     YUYV* bufArray = reinterpret_cast<YUYV*>(buffer.start.get());
-
+    std::string frameLine;    
     for (int i = 20; i < height - 20; ++i) {
+        frameLine.clear();
         for (int j = 0; j < width; ++j) {
             unsigned char m1 = 1;
             unsigned char m2 = 1 << 2;
@@ -49,9 +50,9 @@ static void ConvertAndPrint(const Buffer& buffer, int height, int width,
                 std::cout << val << ": val" << std::endl;
                 throw std::runtime_error("[FrameConverter] Out of bound index");
             }
-            std::cout << grayScale[index];
+            frameLine += grayScale[index];
         }
-        std::cout << std::endl;
+        std::cout << frameLine << '\n';
     }
 }
 }
