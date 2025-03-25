@@ -18,7 +18,7 @@ struct YUYV {
 };
 
 
-static void ConvertAndPrint(const Buffer& buffer, int height, int width,
+inline void ConvertAndPrint(const Buffer& buffer, int height, int width,
                              const std::string& grayScale) {
     if (buffer.length <= 0 || !buffer.start)
         return;

@@ -189,7 +189,7 @@ void CameraDevice::InitMmapMode() {
 
     Buffers_ = std::vector<Buffer>(req.count, Buffer());
 
-    for (int i = 0; i < req.count; ++i) {
+    for (__u32 i = 0; i < req.count; ++i) {
         struct v4l2_buffer buf;
         std::memset(&buf, 0, sizeof(buf));
 
@@ -235,7 +235,7 @@ void CameraDevice::InitUserPtrMode(unsigned int bufSize) {
 
     Buffers_ = std::vector<Buffer>(req.count, Buffer());
 
-    for (int i = 0; i < req.count; ++i) {
+    for (__u32 i = 0; i < req.count; ++i) {
         Buffers_[i].length = bufSize;
         Buffers_[i].start = std::shared_ptr<void>(malloc(bufSize), free);
     }
@@ -370,7 +370,7 @@ const std::optional<CameraDevice::Buffer> CameraDevice::GetFrame() {
                 throw std::runtime_error("[GetFrame] VIDIOC_DQBUF");
             }
 
-            for (int i = 0; i < Buffers_.size(); ++i) {
+            for (__u32 i = 0; i < Buffers_.size(); ++i) {
                 if (buf.m.userptr == (unsigned long)Buffers_[i].start.get()
                         && buf.length == Buffers_[i].length) {
                         index = i;

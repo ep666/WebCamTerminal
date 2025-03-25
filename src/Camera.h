@@ -47,8 +47,7 @@ private:
     IOMethod IoMethod_;
     std::vector<Buffer> Buffers_;
     bool IsCapturing_ {false};
-    bool IsFirstFrame_ {true};
 
+    unsigned int BufferSize_;
     FormatInfo FormatInfo_;
-    unsigned int BufferSize_ {60};
 };

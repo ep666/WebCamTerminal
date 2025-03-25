@@ -3,13 +3,16 @@
 #include "Params.h"
 
 #include <atomic>
-#include <functional>
 #include <thread>
 
 #include <termios.h>
 #include <unistd.h>
 
-void GetInput(std::atomic_bool& x) {
+namespace {
+    std::atomic_bool isRuning(true);
+};
+
+void GetInput() {
     char input;
     struct termios oldSet, newSet;
     tcgetattr(fileno(stdin), &oldSet);
@@ -42,12 +45,12 @@ void GetInput(std::atomic_bool& x) {
     }
 
     tcsetattr(fileno(stdin), TCSANOW, &oldSet);
-    x = false;
+    isRuning = false;
 }
 
 
-void MainLoop(CameraDevice& cd, const int height, const int width,
-                     const std::atomic_bool& isRuning, const std::string& grayScale) {
+void MainLoop(CameraDevice& cd, const int height,
+     const int width, const std::string& grayScale) {
     while(isRuning) {
         const auto& frame = cd.GetFrame();
         system("clear");
@@ -68,11 +71,10 @@ int main() {
 
     cd.StartCapturing();
 
-    std::atomic_bool runing(true);
-    std::thread t(GetInput, std::ref(runing));
+    std::thread t(GetInput);
     t.detach();
 
-    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, runing, params.GrayScaleDepth);
+    MainLoop(cd, cd.GetFormat().Height, cd.GetFormat().Width, params.GrayScaleDepth);
 
     system("clear");
     return 0;

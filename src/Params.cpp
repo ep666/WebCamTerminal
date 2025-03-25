@@ -78,15 +78,15 @@ private:
                         "If there is no variants, "
                         "check that video device is connected" << std::endl;
 
-            for (int i = 0; i < paths.size(); ++i) {
+            for (size_t i = 0; i < paths.size(); ++i) {
                 std::cout << "[" << i << "]: " << paths[i] << std::endl;
             }
 
             std::cin >> input;
 
             if (isdigit(input)) {
-                int idx = input - '0';
-                if (idx >= 0 && idx < paths.size()) {
+                size_t idx = input - '0';
+                if (idx < paths.size()) {
                     Params_.DevicePath = paths[idx];
                     return;
                 }
